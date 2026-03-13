@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bobo Kalonlarimiz - Offline Quiz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6ec1e4;
+            --secondary: #f4e27a;
+            --dark: #0f1724;
+            --glass: rgba(20, 30, 40, 0.95);
+            --light: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f1724 0%, #1a2e4a 50%, #0d1b2a 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Galaxy Background with Stars */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(110, 193, 228, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(244, 226, 122, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Floating Stars */
+        .stars {
+            position: fixed;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* Header */
+        header {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(110, 193, 228, 0.2);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            transform: scale(1.1);
+            color: var(--secondary);
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .menu-toggle:hover {
+            transform: scale(1.1);
+            color: var(--secondary);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #6ec1e4, #f4e27a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .sync-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #6ec1e4;
+            animation: pulse 2s infinite;
+        }
+
+        .sync-indicator.offline {
+            background: #f4e27a;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Side Menu */
+        .side-menu {
+            position: fixed;
+            left: -300px;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background: rgba(15, 23, 36, 0.98);
+            backdrop-filter: blur(10px);
+            border-right: 2px solid rgba(110, 193, 228, 0.3);
+            z-index: 999;
+            transition: left 0.3s;
+            overflow-y: auto;
+            padding-top: 20px;
+        }
+
+        .side-menu.active {
+            left: 0;
+        }
+
+        .menu-close {
+            background: none;
+            border: none;
+            color: var(--secondary);
+            font-size: 28px;
+            cursor: pointer;
+            padding: 10px 20px;
+            width: 100%;
+            text-align: right;
+            transition: all 0.3s;
+        }
+
+        .menu-close:hover {
+            color: var(--primary);
+        }
+
+        .menu-section {
+            padding: 20px;
+            border-bottom: 1px solid rgba(110, 193, 228, 0.2);
+        }
+
+        .menu-section h3 {
+            color: var(--secondary);
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .menu-item {
+            padding: 12px 15px;
+            margin: 5px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #ddd;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+        }
+
+        .menu-item:hover {
+            background: rgba(110, 193, 228, 0.2);
+            color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .menu-item.active {
+            background: rgba(110, 193, 228, 0.3);
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 998;
+        }
+
+        .menu-overlay.active {
+            display: block;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Search Box */
+        .search-section {
+            margin: 30px 0;
+            display: flex;
+            gap: 10px;
+        }
+
+        #search {
+            flex: 1;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        #search:focus {
+            box-shadow: 0 12px 35px rgba(110, 193, 228, 0.4);
+        }
+
+        .search-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #6ec1e4, #44a8c4);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(110, 193, 228, 0.5);
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        /* Card */
+        .card {
+            background: var(--glass);
+            border-radius: 20px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(110, 193, 228, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 50px rgba(110, 193, 228, 0.4);
+            border-color: rgba(110, 193, 228, 0.6);
+        }
+
+        .card-image {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(135deg, #6ec1e4, #44a8c4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: white;
+            font-weight: bold;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-image::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.5));
+        }
+
+        .card-content {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .card-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #f4e27a;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .card-category {
+            font-size: 12px;
+            color: #6ec1e4;
+            margin-bottom: 10px;
+        }
+
+        .card-btn {
+            background: linear-gradient(135deg, #6ec1e4, #f4e27a);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 15px;
+            color: #0f1724;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .card-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Quiz Modal */
+        .quiz-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s;
+        }
+
+        .quiz-modal.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .quiz-container {
+            background: var(--glass);
+            border-radius: 30px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            border: 1px solid rgba(110, 193, 228, 0.3);
+            backdrop-filter: blur(10px);
+            animation: slideUp 0.4s;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid rgba(110, 193, 228, 0.3);
+            padding-bottom: 20px;
+        }
+
+        .quiz-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #f4e27a;
+        }
+
+        .quiz-counter {
+            background: rgba(110, 193, 228, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #6ec1e4;
+        }
+
+        .close-btn {
+            background: rgba(244, 226, 122, 0.2);
+            border: none;
+            color: #f4e27a;
+            font-size: 28px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            background: rgba(244, 226, 122, 0.4);
+            transform: rotate(90deg);
+        }
+
+        .question {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 30px 0 20px 0;
+            color: white;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option {
+            background: rgba(110, 193, 228, 0.1);
+            border: 2px solid rgba(110, 193, 228, 0.3);
+            padding: 15px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+            font-size: 16px;
+            text-align: left;
+        }
+
+        .option:hover {
+            background: rgba(110, 193, 228, 0.2);
+            border-color: rgba(110, 193, 228, 0.6);
+            transform: translateX(5px);
+        }
+
+        .option.selected {
+            background: rgba(110, 193, 228, 0.5);
+            border-color: #6ec1e4;
+        }
+
+        .quiz-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+            justify-content: space-between;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-prev {
+            background: rgba(244, 226, 122, 0.2);
+            color: #f4e27a;
+            border: 2px solid rgba(244, 226, 122, 0.5);
+        }
+
+        .btn-prev:hover {
+            background: rgba(244, 226, 122, 0.3);
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #6ec1e4, #44a8c4);
+            color: white;
+        }
+
+        .btn-next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(110, 193, 228, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Results */
+        .results-container {
+            background: var(--glass);
+            border-radius: 30px;
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            border: 1px solid rgba(110, 193, 228, 0.3);
+        }
+
+        .results-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #f4e27a;
+        }
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: conic-gradient(#6ec1e4 0deg, #6ec1e4 var(--percentage), transparent var(--percentage));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            color: #f4e27a;
+            margin: 20px auto;
+            box-shadow: 0 0 30px rgba(110, 193, 228, 0.3);
+        }
+
+        .results-text {
+            font-size: 18px;
+            color: #ddd;
+            margin: 20px 0;
+        }
+
+        .results-btn {
+            background: linear-gradient(135deg, #6ec1e4, #f4e27a);
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            color: #0f1724;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+            font-size: 16px;
+        }
+
+        .results-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .quiz-container {
+                padding: 20px;
+                max-width: 100%;
+            }
+
+            .logo {
+                font-size: 18px;
+            }
+
+            .search-section {
+                flex-direction: column;
+            }
+
+            .menu-toggle {
+                font-size: 24px;
+            }
+
+            .back-btn {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Side Menu -->
+<div class="side-menu" id="sideMenu">
+    <button class="menu-close" onclick="toggleMenu()">×</button>
+    
+    <div class="menu-section">
+        <h3>📚 Asosiy</h3>
+        <div class="menu-item" onclick="goToHome()">🏠 Bosh sahifa</div>
+        <div class="menu-item" onclick="filterByCategory('all')">🌟 Hammasi</div>
+    </div>
+
+    <div class="menu-section">
+        <h3>🎓 Kategoriyalar</h3>
+        <div class="menu-item" onclick="filterByCategory('scientist')">🔬 Olimlar</div>
+        <div class="menu-item" onclick="filterByCategory('writer')">✍️ Yozuvchilar</div>
+        <div class="menu-item" onclick="filterByCategory('commander')">⚔️ Sarkardalar</div>
+        <div class="menu-item" onclick="filterByCategory('scholar')">📖 Allomalari</div>
+    </div>
+
+    <div class="menu-section">
+        <h3>⚙️ Sozlamalar</h3>
+        <div class="menu-item" onclick="clearData()">🗑️ Ma'lumotlarni o'chirish</div>
+    </div>
+
+    <div class="menu-section">
+        <h3>🔗 Havolalar</h3>
+        <div class="menu-item" onclick="openLink('https://uz.wikipedia.org')">📖 Wikipedia</div>
+        <div class="menu-item" onclick="openLink('https://github.com/dasturlashcurssalohiddin-collab/Bobo-kalonlarimiz')">💻 GitHub</div>
+    </div>
+</div>
+
+<!-- Menu Overlay -->
+<div class="menu-overlay" id="menuOverlay" onclick="toggleMenu()"></div>
+
+<!-- Header -->
+<header>
+    <div class="header-left">
+        <button class="back-btn" onclick="goToHome()" title="Bosh sahifaga qaytish">← Orqaga</button>
+        <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+        <div class="logo">🎓 Bobo Kalonlarimiz</div>
+    </div>
+    <div class="status">
+        <div class="sync-indicator" id="syncIndicator"></div>
+        <span id="statusText">Online</span>
+    </div>
+</header>
+
+<!-- Container -->
+<div class="container">
+    <!-- Search -->
+    <div class="search-section">
+        <input type="text" id="search" placeholder="Bobo kalon nomini yozing...">
+        <button class="search-btn" onclick="filterCards()">🔍 Qidirish</button>
+    </div>
+
+    <!-- Grid -->
+    <div class="grid" id="grid"></div>
+</div>
+
+<!-- Quiz Modal -->
+<div class="quiz-modal" id="quizModal">
+    <div class="quiz-container">
+        <div class="quiz-header">
+            <div class="quiz-title" id="quizTitle">Quiz</div>
+            <div class="quiz-counter"><span id="questionCounter">1</span>/<span id="totalQuestions">10</span></div>
+            <button class="close-btn" onclick="closeQuiz()">×</button>
+        </div>
+
+        <div class="question" id="questionText"></div>
+        <div class="options" id="optionsContainer"></div>
+
+        <div class="quiz-buttons">
+            <button class="btn btn-prev" id="prevBtn" onclick="previousQuestion()" disabled>← Oldingi</button>
+            <button class="btn btn-next" id="nextBtn" onclick="nextQuestion()">Keyingi →</button>
+        </div>
+    </div>
+</div>
+
+<!-- Results Modal -->
+<div class="quiz-modal" id="resultsModal">
+    <div class="results-container">
+        <div class="results-title">📊 Natijalar</div>
+        <div class="score-circle" id="scoreCircle">0%</div>
+        <div class="results-text">
+            To'g'ri javoblar: <strong id="correctCount">0</strong>/<span id="totalCount">10</span>
+        </div>
+        <button class="results-btn" onclick="closeResults()">Yana o'ynash</button>
+    </div>
+</div>
+
+<script>
+    /* ============================================
+       DATA: 48 Historical Figures
+       ============================================ */
+
+    const people = [
+        { name: 'Alisher Navoiy', category: 'writer', emoji: '📝' },
+        { name: 'Amir Temur', category: 'commander', emoji: '⚔️' },
+        { name: 'Mirzo Ulug\'bek', category: 'scientist', emoji: '🔭' },
+        { name: 'Zahiriddin Bobur', category: 'writer', emoji: '📖' },
+        { name: 'Ibn Sino', category: 'scientist', emoji: '⚕️' },
+        { name: 'Muhammad al-Xorazmiy', category: 'scientist', emoji: '🧮' },
+        { name: 'Al-Beruniy', category: 'scientist', emoji: '📚' },
+        { name: 'Ahmad al-Farg\'oniy', category: 'scientist', emoji: '🔬' },
+        { name: 'Imom al-Buxoriy', category: 'scholar', emoji: '📕' },
+        { name: 'Imom at-Termiziy', category: 'scholar', emoji: '📗' },
+        { name: 'Ahmad Yassaviy', category: 'scholar', emoji: '🕌' },
+        { name: 'Bahouddin Naqshband', category: 'scholar', emoji: '🙏' },
+        { name: 'Najmiddin Kubro', category: 'scholar', emoji: '✨' },
+        { name: 'Mahmud Qoshg\'ariy', category: 'scientist', emoji: '📖' },
+        { name: 'Mahmud Zamaxshariy', category: 'scientist', emoji: '📚' },
+        { name: 'Abu Mansur Moturidiy', category: 'scholar', emoji: '🎓' },
+        { name: 'Al-Farobiy', category: 'scientist', emoji: '🧠' },
+        { name: 'Abdulla Qodiriy', category: 'writer', emoji: '✍️' },
+        { name: 'Cho\'lpon', category: 'writer', emoji: '📜' },
+        { name: 'To\'maris', category: 'commander', emoji: '👑' },
+        { name: 'Jaloliddin Manguberdi', category: 'commander', emoji: '🗡️' },
+        { name: 'Nodira Begim', category: 'writer', emoji: '💫' },
+        { name: 'Uvaysiy', category: 'writer', emoji: '🌟' },
+        { name: 'Mahmudxo\'ja Behbudiy', category: 'writer', emoji: '📰' },
+        { name: 'Munavvar Qori Abdurashidxonov', category: 'writer', emoji: '🎭' },
+        { name: 'Abdulla Avloniy', category: 'writer', emoji: '📝' },
+        { name: 'Is\'hoqxon Ibrat', category: 'writer', emoji: '📖' },
+        { name: 'Sadriddin Ayni', category: 'writer', emoji: '✍️' },
+        { name: 'Hamza Hakimzoda Niyoziy', category: 'writer', emoji: '📚' },
+        { name: 'Usmon Nosir', category: 'writer', emoji: '🖊️' },
+        { name: 'Ahmad Donish', category: 'scientist', emoji: '💡' },
+        { name: 'Qutayba ibn Muslim', category: 'commander', emoji: '🏹' },
+        { name: 'Mahmud of Ghazni', category: 'commander', emoji: '⚔️' },
+        { name: 'Abu Hafs Kabir', category: 'scholar', emoji: '📖' },
+        { name: 'Burhan al-Din al-Marghinani', category: 'scholar', emoji: '🎓' },
+        { name: 'Ali Qushchi', category: 'scientist', emoji: '🔭' },
+        { name: 'Abu Bakr Narshakhi', category: 'scientist', emoji: '📚' },
+        { name: 'Abu Muin Nasafi', category: 'scholar', emoji: '✨' },
+        { name: 'Najm al-Din Kubra', category: 'scholar', emoji: '🌙' },
+        { name: 'Yusuf Hamadani', category: 'scholar', emoji: '🙏' },
+        { name: 'Zulfiya', category: 'writer', emoji: '✍️' },
+        { name: 'Saida Zunnunova', category: 'writer', emoji: '📝' },
+        { name: 'Halima Xudoyberdiyeva', category: 'writer', emoji: '🖋️' },
+        { name: 'Gulchehra Nurullayeva', category: 'writer', emoji: '💬' },
+        { name: 'Komila Yashin', category: 'writer', emoji: '📖' },
+        { name: 'Rabia Balkhi', category: 'writer', emoji: '🌹' },
+        { name: 'Gawharshad Begum', category: 'commander', emoji: '👸' },
+        { name: 'Bibi-Khanym', category: 'commander', emoji: '💎' }
+    ];
+
+    /* Quiz Questions */
+    const quizzes = {
+        'Alisher Navoiy': [
+            { q: 'Alisher Navoiy qaysi asrda yasagan?', options: ['XIV asrning oxiri', 'XV asrning boshi', 'XVI asrning boshi', 'XVII asrning boshi'], answer: 0 },
+            { q: 'Navoiy qaysi shaharda tug\'ilgan?', options: ['Samarqand', 'Buxoro', 'Hirot', 'Xiva'], answer: 2 },
+            { q: 'Navoiyning eng mashhur asari qaysi?', options: ['Xamsa', 'Agarotu-l-foris', 'Mahbubi-qulub', 'Xamsadon'], answer: 0 },
+            { q: 'Alisher Navoiy qaysi tilda yozgan?', options: ['Farsiy', 'Arabiy', 'Turkiy', 'Xona'], answer: 2 },
+            { q: 'Navoiy necha asar tuzgan?', options: ['15 ta', '20 ta', '30 ta', '40 ta'], answer: 2 },
+            { q: 'Navoiy qaysi hukmdor davlatida ishlagan?', options: ['Shaybaniylar', 'Astarahanalilar', 'Huzaynilar', 'Temurililar'], answer: 0 },
+            { q: 'Alisher Navoiy qaysi kasb bilan shugullanishgan?', options: ['Shoir va vizir', 'Hakim va shoir', 'Inkishofchi va diplomat', 'Hakam va qazi'], answer: 0 },
+            { q: 'Navoiyning o\'lim sanasi qaysi?', options: ['1501-yil', '1506-yil', '1509-yil', '1512-yil'], answer: 1 },
+            { q: 'Navoiy qaysi universitetni qurgan?', options: ['Ulugbek Universiteti', 'Navoiy Madrasasi', 'Hirot Akademiyasi', 'Xiva Maktabi'], answer: 2 },
+            { q: 'Alisher Navoiyning ism-aadasni nima?', options: ['Mir Alisher Abdusattor', 'Mir Alisher Qul', 'Mir Alisher Mir', 'Mir Alisher Navab'], answer: 0 }
+        ],
+        'Amir Temur': [
+            { q: 'Amir Temur qaysi yilda tug\'ilgan?', options: ['1320', '1336', '1350', '1370'], answer: 1 },
+            { q: 'Amir Temurning ism-asli nima?', options: ['Temurjon', 'Timir', 'Timur ibn Taragay', 'Timir begi'], answer: 2 },
+            { q: 'Amir Temur qaysi davlatni tuzgan?', options: ['Temuriy davlat', 'Temurjon imperiyasi', 'Temur sulolasi', 'Qoqon xonligi'], answer: 2 },
+            { q: 'Amir Temurning poytaxti qaysi shahar bo\'lgan?', options: ['Samarqand', 'Buxoro', 'Xiva', 'Tashkent'], answer: 0 },
+            { q: 'Amir Temur qaysi oylarda feodallik qilgan?', options: ['Hindiston va Eron', 'Xitoy va Qozog\'iston', 'Misir va Suriya', 'Anodol va Qavqaz'], answer: 0 },
+            { q: 'Amir Temurning o\'lim sanasi qaysi?', options: ['1401', '1405', '1408', '1410'], answer: 1 },
+            { q: 'Amir Temur qaysi shoxning avlodi edi?', options: ['Genghis xon', 'Amir Ali Suyor', 'Shimbek xon', 'Qurcay xon'], answer: 1 },
+            { q: 'Amir Temurning askar kuchi qancha bo\'lgan?', options: ['100 ming', '200 ming', '300 ming', '400 ming'], answer: 2 },
+            { q: 'Amir Temur qaysi tilning o\'z tillaridan biri bo\'lgan?', options: ['Mongoliy', 'Tatoariy', 'Qipchaqiy', 'Turkiy'], answer: 3 },
+            { q: 'Amir Temurning urushi ko\'chami qayda?', options: ['Samarqand', 'Buxoro', 'Xiva', 'Shahrixon'], answer: 1 }
+        ]
+    };
+
+    function generateQuizzesForAll() {
+        people.forEach(person => {
+            if (!quizzes[person.name]) {
+                quizzes[person.name] = generateRandomQuiz(person.name, person.category);
+            }
+        });
+    }
+
+    function generateRandomQuiz(name, category) {
+        const questions = [];
+        for (let i = 0; i < 10; i++) {
+            questions.push({
+                q: `${name} haqidagi savol ${i + 1}?`,
+                options: ['Javob A', 'Javob B', 'Javob C', 'Javob D'],
+                answer: Math.floor(Math.random() * 4)
+            });
+        }
+        return questions;
+    }
+
+    /* ============================================
+       STATE MANAGEMENT
+       ============================================ */
+
+    let state = {
+        currentPerson: null,
+        currentQuestion: 0,
+        answers: [],
+        isQuizOpen: false,
+        syncEnabled: navigator.onLine,
+        filteredPeople: [...people],
+        currentCategory: 'all'
+    };
+
+    /* ============================================
+       INDEXEDDB SETUP
+       ============================================ */
+
+    const DB_NAME = 'BobokalonDB';
+    const DB_VERSION = 1;
+    let db;
+
+    function initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                db = request.result;
+                resolve(db);
+            };
+
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains('results')) {
+                    db.createObjectStore('results', { keyPath: 'id', autoIncrement: true });
+                }
+                if (!db.objectStoreNames.contains('settings')) {
+                    db.createObjectStore('settings', { keyPath: 'key' });
+                }
+            };
+        });
+    }
+
+    /* ============================================
+       MENU FUNCTIONS
+       ============================================ */
+
+    function toggleMenu() {
+        const menu = document.getElementById('sideMenu');
+        const overlay = document.getElementById('menuOverlay');
+        menu.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+
+    function goToHome() {
+        toggleMenu();
+        window.location.href = 'https://dasturlashcurssalohiddin-collab.github.io/Bobo-kalonlarimiz/';
+    }
+
+    function filterByCategory(category) {
+        toggleMenu();
+        state.currentCategory = category;
+        if (category === 'all') {
+            state.filteredPeople = [...people];
+        } else {
+            state.filteredPeople = people.filter(p => p.category === category);
+        }
+        renderGrid(state.filteredPeople);
+    }
+
+    function clearData() {
+        if (confirm('Haqiqatan ham barcha ma\'lumotlarni o\'chirmoqchisiz?')) {
+            indexedDB.deleteDatabase(DB_NAME);
+            alert('Ma\'lumotlar o\'chirildi!');
+        }
+        toggleMenu();
+    }
+
+    function openLink(url) {
+        window.open(url, '_blank');
+    }
+
+    /* ============================================
+       RENDERING
+       ============================================ */
+
+    function renderGrid(list = people) {
+        const grid = document.getElementById('grid');
+        grid.innerHTML = '';
+
+        list.forEach(person => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <div class="card-image">${person.emoji}</div>
+                <div class="card-content">
+                    <div class="card-name">${person.name}</div>
+                    <div class="card-category">${getCategoryName(person.category)}</div>
+                    <button class="card-btn" onclick="startQuiz('${person.name}')">Quiz boshlash</button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function getCategoryName(category) {
+        const names = {
+            scientist: '🔬 Olim',
+            writer: '✍️ Yozuvchi',
+            commander: '⚔️ Sarkarda',
+            scholar: '📖 Allomalisi'
+        };
+        return names[category] || category;
+    }
+
+    /* ============================================
+       QUIZ FUNCTIONS
+       ============================================ */
+
+    function startQuiz(personName) {
+        const person = people.find(p => p.name === personName);
+        if (!person) return;
+
+        if (!quizzes[personName]) {
+            alert('Bu odam uchun quiz hali qo\'shilmagan');
+            return;
+        }
+
+        state.currentPerson = person;
+        state.currentQuestion = 0;
+        state.answers = new Array(quizzes[personName].length).fill(null);
+        state.isQuizOpen = true;
+
+        showQuiz();
+    }
+
+    function showQuiz() {
+        const modal = document.getElementById('quizModal');
+        modal.classList.add('active');
+        displayQuestion();
+    }
+
+    function displayQuestion() {
+        const questions = quizzes[state.currentPerson.name];
+        const q = questions[state.currentQuestion];
+
+        document.getElementById('quizTitle').textContent = state.currentPerson.name;
+        document.getElementById('questionCounter').textContent = state.currentQuestion + 1;
+        document.getElementById('totalQuestions').textContent = questions.length;
+        document.getElementById('questionText').textContent = q.q;
+
+        const container = document.getElementById('optionsContainer');
+        container.innerHTML = '';
+
+        q.options.forEach((opt, i) => {
+            const div = document.createElement('div');
+            div.className = 'option' + (state.answers[state.currentQuestion] === i ? ' selected' : '');
+            div.textContent = opt;
+            div.onclick = () => selectAnswer(i);
+            container.appendChild(div);
+        });
+
+        document.getElementById('prevBtn').disabled = state.currentQuestion === 0;
+        document.getElementById('nextBtn').textContent = 
+            state.currentQuestion === questions.length - 1 ? 'Tugatish ✓' : 'Keyingi →';
+    }
+
+    function selectAnswer(index) {
+        state.answers[state.currentQuestion] = index;
+        displayQuestion();
+    }
+
+    function previousQuestion() {
+        if (state.currentQuestion > 0) {
+            state.currentQuestion--;
+            displayQuestion();
+        }
+    }
+
+    function nextQuestion() {
+        const questions = quizzes[state.currentPerson.name];
+        
+        if (state.currentQuestion < questions.length - 1) {
+            state.currentQuestion++;
+            displayQuestion();
+        } else {
+            showResults();
+        }
+    }
+
+    function showResults() {
+        const questions = quizzes[state.currentPerson.name];
+        let correct = 0;
+
+        state.answers.forEach((answer, i) => {
+            if (answer === questions[i].answer) {
+                correct++;
+            }
+        });
+
+        const percentage = Math.round((correct / questions.length) * 100);
+
+        document.getElementById('quizModal').classList.remove('active');
+
+        document.getElementById('correctCount').textContent = correct;
+        document.getElementById('totalCount').textContent = questions.length;
+        document.getElementById('scoreCircle').textContent = percentage + '%';
+        document.getElementById('scoreCircle').style.setProperty('--percentage', (percentage * 3.6) + 'deg');
+
+        document.getElementById('resultsModal').classList.add('active');
+    }
+
+    function closeQuiz() {
+        document.getElementById('quizModal').classList.remove('active');
+        state.isQuizOpen = false;
+    }
+
+    function closeResults() {
+        document.getElementById('resultsModal').classList.remove('active');
+        state.isQuizOpen = false;
+    }
+
+    function filterCards() {
+        const searchValue = document.getElementById('search').value.toLowerCase();
+        state.filteredPeople = people.filter(p => 
+            p.name.toLowerCase().includes(searchValue)
+        );
+        renderGrid(state.filteredPeople);
+    }
+
+    /* ============================================
+       SYNC & OFFLINE MANAGEMENT
+       ============================================ */
+
+    function updateSyncStatus() {
+        const indicator = document.getElementById('syncIndicator');
+        const statusText = document.getElementById('statusText');
+
+        if (navigator.onLine) {
+            indicator.classList.remove('offline');
+            statusText.textContent = 'Online';
+        } else {
+            indicator.classList.add('offline');
+            statusText.textContent = 'Offline';
+        }
+    }
+
+    window.addEventListener('online', updateSyncStatus);
+    window.addEventListener('offline', updateSyncStatus);
+
+    /* ============================================
+       INITIALIZATION
+       ============================================ */
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initDB();
+        generateQuizzesForAll();
+        renderGrid();
+        updateSyncStatus();
+        
+        // Create floating stars
+        createStars();
+
+        // Search input listener
+        document.getElementById('search').addEventListener('keyup', filterCards);
+    });
+
+    function createStars() {
+        for (let i = 0; i < 50; i++) {
+            const star = document.createElement('div');
+            star.className = 'stars';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            document.body.appendChild(star);
+        }
+    }
+
+</script>
+
+</body>
+</html>
